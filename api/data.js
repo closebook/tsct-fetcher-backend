@@ -7,7 +7,6 @@ const BASE =
 let allRecords = [];
 let currentPage = 1;
 let finished = false;
-let scrapingStarted = false;
 
 async function scrapePage(page) {
   const { data } = await axios.get(BASE + page);
@@ -17,6 +16,7 @@ async function scrapePage(page) {
 
   $("table tbody tr").each((i, el) => {
     const cols = $(el).find("td");
+
     if (cols.length > 0) {
       records.push({
         ehrms: $(cols[1]).text().trim(),
@@ -29,28 +29,26 @@ async function scrapePage(page) {
   return records;
 }
 
-async function startScraping() {
-  if (scrapingStarted) return;
-  scrapingStarted = true;
+export default async function handler(req, res) {
+  try {
+    // scrape ONE page per request
+    if (!finished) {
+      const records = await scrapePage(currentPage);
 
-  while (!finished) {
-    const records = await scrapePage(currentPage);
-
-    if (records.length === 0) {
-      finished = true;
-      break;
+      if (records.length === 0) {
+        finished = true;
+      } else {
+        allRecords = allRecords.concat(records);
+        currentPage++;
+      }
     }
 
-    allRecords = allRecords.concat(records);
-    currentPage++;
+    res.status(200).json({
+      records: allRecords,
+      finished
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: "Scraper crashed", details: err.message });
   }
-}
-
-export default async function handler(req, res) {
-  await startScraping();
-
-  res.status(200).json({
-    records: allRecords,
-    finished
-  });
 }
