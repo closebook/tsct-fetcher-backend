@@ -30,8 +30,13 @@ async function scrapePage(page) {
 }
 
 export default async function handler(req, res) {
+
+  // ⭐ CORS HEADERS (VERY IMPORTANT)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   try {
-    // scrape ONE page per request
     if (!finished) {
       const records = await scrapePage(currentPage);
 
