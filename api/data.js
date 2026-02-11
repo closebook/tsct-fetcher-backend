@@ -8,8 +8,19 @@ let allRecords = [];
 let currentPage = 1;
 let finished = false;
 
+// ⭐ Pretend to be real browser (VERY IMPORTANT)
+const axiosClient = axios.create({
+  headers: {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html"
+  },
+  timeout: 10000
+});
+
 async function scrapePage(page) {
-  const { data } = await axios.get(BASE + page);
+  const { data } = await axiosClient.get(BASE + page);
   const $ = cheerio.load(data);
 
   let records = [];
@@ -30,8 +41,7 @@ async function scrapePage(page) {
 }
 
 export default async function handler(req, res) {
-
-  // ⭐ CORS HEADERS (VERY IMPORTANT)
+  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -54,6 +64,10 @@ export default async function handler(req, res) {
     });
 
   } catch (err) {
-    res.status(500).json({ error: "Scraper crashed", details: err.message });
+    res.status(200).json({
+      records: allRecords,
+      finished,
+      error: err.message
+    });
   }
 }
